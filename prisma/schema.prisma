@@ -1,0 +1,355 @@
+// Generated schema — modeled after beautyhqio conventions.
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  active       Boolean @default(true)
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  role         Role     @default(ANALYST)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  ANALYST
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  actorName String?
+  action    String
+  entity    String
+  entityId  String?
+  detail    String?
+  createdAt DateTime @default(now())
+}
+
+model WorkflowAnalysis {
+ id String @id @default(cuid())
+ actorId String
+ workflow String
+ subjectEntity String
+ subjectId String
+ input Json
+ evidence Json
+ evidenceHash String
+ result Json
+ model String
+ receipt String?
+ createdAt DateTime @default(now())
+ @@index([workflow, createdAt])
+}
+model RecordReview {
+ id String @id @default(cuid())
+ actorId String
+ entity String
+ entityId String
+ version String
+ reason String
+ createdAt DateTime @default(now())
+ @@unique([entity, entityId, version, actorId])
+}
+model UsageBucket {
+ id String @id
+ calls Int
+}
+model IssuedCredential {
+ token String @id
+ entity String
+ entityId String
+ version String
+ assertion Json
+ createdAt DateTime @default(now())
+ revokedAt DateTime?
+ @@index([entity, entityId, createdAt])
+}
+
+model DomainArtifact {
+ id String @id @default(cuid())
+ subjectEntity String
+ subjectId String
+ title String
+ content String
+ contentHash String
+ actorId String
+ approvedBy String?
+ createdAt DateTime @default(now())
+ @@index([subjectEntity, subjectId])
+}
+
+model RecordApproval {
+ id String @id
+ version String
+}
+model DomainExecution {
+ id String @id
+ actorId String
+ connectorId String
+ action String
+ subjectEntity String
+ subjectId String
+ version String
+ status String
+ result Json?
+ createdAt DateTime @default(now())
+}
+
+model WorkSession {
+ id String @id @default(cuid())
+ actorId String
+ respondentId String
+ subjectEntity String
+ subjectId String
+ questions Json
+ answers Json
+ currentQuestion String?
+ status String
+ deadline DateTime
+ createdAt DateTime @default(now())
+ @@index([respondentId, createdAt])
+}
+model SessionMedia {
+ id String @id @default(cuid())
+ sessionId String
+ questionId String
+ actorId String
+ contentType String
+ bytes Bytes
+ contentHash String
+ createdAt DateTime @default(now())
+ @@index([sessionId])
+}
+
+model AppSetting {
+ id String @id
+ value Json
+ updatedAt DateTime @updatedAt
+}
+
+model RepatriationCase {
+ id String @id @default(cuid())
+ name String
+ caseNumber String
+ familyReference String
+ origin String
+ destination String
+ coordinator String
+ openedAt DateTime
+ status String @default("Draft")
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ @@index([createdAt])
+ inverseDeceasedRecord_repatriationCaseId DeceasedRecord[] @relation("DeceasedRecord_repatriationCaseId")
+ inverseConsularDocument_repatriationCaseId ConsularDocument[] @relation("ConsularDocument_repatriationCaseId")
+ inverseDestinationRequirement_repatriationCaseId DestinationRequirement[] @relation("DestinationRequirement_repatriationCaseId")
+ inverseFuneralProvider_repatriationCaseId FuneralProvider[] @relation("FuneralProvider_repatriationCaseId")
+ inversePreparationRecord_repatriationCaseId PreparationRecord[] @relation("PreparationRecord_repatriationCaseId")
+ inverseCargoBooking_repatriationCaseId CargoBooking[] @relation("CargoBooking_repatriationCaseId")
+ inverseRepatriationHandoff_repatriationCaseId RepatriationHandoff[] @relation("RepatriationHandoff_repatriationCaseId")
+ inverseCaseExpense_repatriationCaseId CaseExpense[] @relation("CaseExpense_repatriationCaseId")
+ inverseOperationalTask_repatriationCaseId OperationalTask[] @relation("OperationalTask_repatriationCaseId")
+ inverseRuleVersion_repatriationCaseId RuleVersion[] @relation("RuleVersion_repatriationCaseId")
+ inverseDocumentRequirement_repatriationCaseId DocumentRequirement[] @relation("DocumentRequirement_repatriationCaseId")
+}
+
+model DeceasedRecord {
+ id String @id @default(cuid())
+ name String
+ identityReference String
+ dateOfDeath DateTime
+ placeOfDeath String
+ nationality String
+ status String @default("Draft")
+ repatriationCaseId String
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ @@index([createdAt])
+ @@index([repatriationCaseId])
+ linkedRepatriationCaseId RepatriationCase @relation("DeceasedRecord_repatriationCaseId", fields: [repatriationCaseId], references: [id], onDelete: Restrict)
+}
+
+model ConsularDocument {
+ id String @id @default(cuid())
+ title String
+ documentType String
+ issuedAt DateTime
+ expiresAt DateTime?
+ authority String
+ sourceReference String
+ status String @default("Draft")
+ repatriationCaseId String
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ @@index([createdAt])
+ @@index([repatriationCaseId])
+ linkedRepatriationCaseId RepatriationCase @relation("ConsularDocument_repatriationCaseId", fields: [repatriationCaseId], references: [id], onDelete: Restrict)
+}
+
+model DestinationRequirement {
+ id String @id @default(cuid())
+ title String
+ jurisdiction String
+ version String
+ effectiveAt DateTime
+ requirementText String
+ sourceUrl String
+ status String @default("Draft")
+ repatriationCaseId String
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ @@index([createdAt])
+ @@index([repatriationCaseId])
+ linkedRepatriationCaseId RepatriationCase @relation("DestinationRequirement_repatriationCaseId", fields: [repatriationCaseId], references: [id], onDelete: Restrict)
+}
+
+model FuneralProvider {
+ id String @id @default(cuid())
+ name String
+ country String
+ director String
+ contact String
+ licenseReference String
+ status String @default("Draft")
+ repatriationCaseId String
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ @@index([createdAt])
+ @@index([repatriationCaseId])
+ linkedRepatriationCaseId RepatriationCase @relation("FuneralProvider_repatriationCaseId", fields: [repatriationCaseId], references: [id], onDelete: Restrict)
+}
+
+model PreparationRecord {
+ id String @id @default(cuid())
+ title String
+ preparedAt DateTime
+ preparer String
+ method String
+ certificateReference String
+ notes String
+ status String @default("Draft")
+ repatriationCaseId String
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ @@index([createdAt])
+ @@index([repatriationCaseId])
+ linkedRepatriationCaseId RepatriationCase @relation("PreparationRecord_repatriationCaseId", fields: [repatriationCaseId], references: [id], onDelete: Restrict)
+}
+
+model CargoBooking {
+ id String @id @default(cuid())
+ title String
+ airline String
+ airwayBill String
+ origin String
+ destination String
+ departureAt DateTime
+ arrivalAt DateTime
+ status String @default("Draft")
+ repatriationCaseId String
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ @@index([createdAt])
+ @@index([repatriationCaseId])
+ linkedRepatriationCaseId RepatriationCase @relation("CargoBooking_repatriationCaseId", fields: [repatriationCaseId], references: [id], onDelete: Restrict)
+}
+
+model RepatriationHandoff {
+ id String @id @default(cuid())
+ title String
+ handedAt DateTime
+ sender String
+ receiver String
+ location String
+ sealReference String
+ receipt String
+ status String @default("Draft")
+ repatriationCaseId String
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ @@index([createdAt])
+ @@index([repatriationCaseId])
+ linkedRepatriationCaseId RepatriationCase @relation("RepatriationHandoff_repatriationCaseId", fields: [repatriationCaseId], references: [id], onDelete: Restrict)
+}
+
+model CaseExpense {
+ id String @id @default(cuid())
+ title String
+ supplier String
+ category String
+ amountCents Int
+ currency String
+ incurredAt DateTime
+ receipt String?
+ status String @default("Draft")
+ repatriationCaseId String
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ @@index([createdAt])
+ @@index([repatriationCaseId])
+ linkedRepatriationCaseId RepatriationCase @relation("CaseExpense_repatriationCaseId", fields: [repatriationCaseId], references: [id], onDelete: Restrict)
+}
+
+model OperationalTask {
+ id String @id @default(cuid())
+ title String
+ owner String
+ priority String
+ startAt DateTime
+ dueAt DateTime
+ done Boolean
+ notes String?
+ status String @default("Draft")
+ repatriationCaseId String
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ @@index([createdAt])
+ @@index([repatriationCaseId])
+ linkedRepatriationCaseId RepatriationCase @relation("OperationalTask_repatriationCaseId", fields: [repatriationCaseId], references: [id], onDelete: Restrict)
+}
+
+model RuleVersion {
+ id String @id @default(cuid())
+ title String
+ jurisdiction String
+ version String
+ effectiveAt DateTime
+ expiresAt DateTime?
+ sourceUrl String
+ requirementText String
+ status String @default("Draft")
+ repatriationCaseId String
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ @@index([createdAt])
+ @@index([repatriationCaseId])
+ linkedRepatriationCaseId RepatriationCase @relation("RuleVersion_repatriationCaseId", fields: [repatriationCaseId], references: [id], onDelete: Restrict)
+}
+
+model DocumentRequirement {
+ id String @id @default(cuid())
+ title String
+ category String
+ requiredBy DateTime
+ sourceReference String
+ evidenceReference String?
+ reviewNotes String?
+ status String @default("Draft")
+ repatriationCaseId String
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ @@index([createdAt])
+ @@index([repatriationCaseId])
+ linkedRepatriationCaseId RepatriationCase @relation("DocumentRequirement_repatriationCaseId", fields: [repatriationCaseId], references: [id], onDelete: Restrict)
+}
